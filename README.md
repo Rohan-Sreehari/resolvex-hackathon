@@ -4,6 +4,27 @@ ResolveX is a Bengaluru civic issue reporting MVP. Citizens can register, submit
 
 The backend uses Express, PostgreSQL, and Prisma 6. Uploaded files are stored outside the public web root. No email, phone call, or grievance submission is sent by ResolveX.
 
+- **Live demo:** <https://resolvex-hackathon.vercel.app/>
+- **Public source:** <https://github.com/Rohan-Sreehari/resolvex-hackathon>
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Citizen[Citizen browser] -->|Register, report, track| Web[ResolveX web app]
+  Officer[Officer or admin browser] -->|Sign in, manage reports| Web
+  Web -->|Same-origin REST API| API[Express API on Vercel]
+  API --> Auth[JWT authentication and role checks]
+  API --> Prisma[Prisma 6]
+  Prisma --> DB[(Supabase PostgreSQL)]
+  API -->|Optional, server-side| AI[OpenAI API]
+  API -->|When AI is unavailable| Fallback[Local labelled analysis fallback]
+  API -->|Current upload adapter| Disk[Private local disk]
+  Admin[Admin] -->|Maintain sourced contacts| DB
+```
+
+The live API health check currently reports a successful database connection. The current upload adapter uses local private disk; Vercel's function filesystem is temporary, so **uploaded images are not durable in the hosted demo**. Durable hosted media needs a private object-storage service and is not configured. Live AI analysis also requires `OPENAI_API_KEY`; without it, the app uses the labelled fallback. The Mermaid diagram describes the code's current request path and does not imply those optional hosted integrations are configured.
+
 ## Requirements
 
 - Node.js 20 or later
@@ -11,6 +32,8 @@ The backend uses Express, PostgreSQL, and Prisma 6. Uploaded files are stored ou
 - OpenAI API key only if you want live AI analysis
 
 ## Setup
+
+The steps below run ResolveX locally. The deployed demo is linked above; changing local `.env` values does not change Vercel's environment.
 
 1. Install packages (Node.js 20 or later):
 
