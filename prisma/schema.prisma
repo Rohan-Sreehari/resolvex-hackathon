@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CITIZEN
+  OFFICER
+  ADMIN
+}
+
+model User {
+  id             String                @id @default(cuid())
+  email          String                @unique
+  passwordHash   String
+  name           String
+  role           UserRole              @default(CITIZEN)
+  isActive       Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  reports        Report[]              @relation("Reporter")
+  assignments    Report[]              @relation("Assignee")
+  history        StatusHistory[]
+  communications CommunicationRecord[]
+  auditEvents    AuditLog[]
+  mediaUploads   Media[]
+
+  @@index([role, isActive])
+}
+
+model Department {
+  id              String        @id @default(cuid())
+  name            String        @unique
+  jurisdiction    String        @default("Bengaluru, Karnataka")
+  description     String
+  categories      String[]
+  officialWebsite String?
+  complaintPortal String?
+  demo            Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  contacts        ContactInfo[]
+  reports         Report[]
+}
+
+model ContactInfo {
+  id             String     @id @default(cuid())
+  departmentId   String
+  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  label          String
+  phone          String?
+  email          String?
+  website        String?
+  sourceUrl      String
+  lastVerifiedAt DateTime?
+  verification   String     @default("UNVERIFIED")
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([departmentId])
+}
+
+model Report {
+  id             String                @id @default(cuid())
+  trackingId     String                @unique
+  reporterId     String
+  reporter       User                  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Restrict)
+  assigneeId     String?
+  assignee       User?                 @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  departmentId   String?
+  department     Department?           @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  category       String
+  description    String
+  locationText   String
+  latitude       Float?
+  longitude      Float?
+  publicLocation String?
+  status         String                @default("New")
+  severity       String?
+  aiSummary      String?
+  aiCategory     String?
+  aiSeverity     String?
+  aiConfidence   Float?
+  aiExplanation  String?
+  aiObservations Json?
+  aiProvider     String?
+  publicApproved Boolean               @default(false)
+  publicSummary  String?
+  publicUpdate   String?
+  demo           Boolean               @default(false)
+  media          Media[]
+  communications CommunicationRecord[]
+  history        StatusHistory[]
+  auditEvents    AuditLog[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([reporterId, createdAt])
+  @@index([assigneeId, status])
+  @@index([departmentId, status])
+  @@index([publicApproved, status])
+}
+
+model Media {
+  id           String   @id @default(cuid())
+  reportId     String
+  report       Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  storageKey   String   @unique
+  originalName String
+  mimeType     String
+  kind         String
+  sizeBytes    Int
+  sha256       String
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime @default(now())
+
+  @@index([reportId])
+}
+
+model CommunicationRecord {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  state     String
+  channel   String?
+  reference String?
+  note      String?
+  source    String   @default("Citizen reported")
+  createdAt DateTime @default(now())
+
+  @@index([reportId, createdAt])
+}
+
+model StatusHistory {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  previous  String?
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([reportId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  reportId  String?
+  report    Report?  @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([reportId, createdAt])
+  @@index([actorId, createdAt])
+}

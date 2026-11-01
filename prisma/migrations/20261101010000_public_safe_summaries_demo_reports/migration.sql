@@ -1,0 +1,3 @@
+ALTER TABLE "Report"
+ADD COLUMN "publicSummary" TEXT,
+ADD COLUMN "demo" BOOLEAN NOT NULL DEFAULT false;
