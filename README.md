@@ -23,7 +23,7 @@ flowchart LR
   Admin[Admin] -->|Maintain sourced contacts| DB
 ```
 
-The live API health check currently reports a successful database connection. The current upload adapter uses local private disk; Vercel's function filesystem is temporary, so **uploaded images are not durable in the hosted demo**. Durable hosted media needs a private object-storage service and is not configured. Live AI analysis also requires `OPENAI_API_KEY`; without it, the app uses the labelled fallback. The Mermaid diagram describes the code's current request path and does not imply those optional hosted integrations are configured.
+The live API health check currently reports a successful database connection. Locally, uploads use `UPLOAD_DIR`. On Vercel, uploads are written to the function's temporary `/tmp/resolvex-private` directory so report submissions can complete; **uploaded images are not durable and may be unavailable on a later request**. Durable hosted media needs a private object-storage service and is not configured. Live AI analysis also requires `OPENAI_API_KEY`; without it, the app uses the labelled fallback. The Mermaid diagram describes the code's current request path and does not imply those optional hosted integrations are configured.
 
 ## Requirements
 
