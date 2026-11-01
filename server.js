@@ -14,7 +14,11 @@ const sharp = require('sharp');
 const prisma = new PrismaClient();
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-const UPLOAD_ROOT = path.resolve(process.env.UPLOAD_DIR || './storage/private');
+// Vercel's deployed filesystem is read-only except for the temporary directory.
+// This keeps image submissions from failing, but hosted files are not durable.
+const UPLOAD_ROOT = process.env.VERCEL
+  ? path.join(require('node:os').tmpdir(), 'resolvex-private')
+  : path.resolve(process.env.UPLOAD_DIR || './storage/private');
 const JWT_SECRET = process.env.JWT_SECRET;
 const MAX_FILE_BYTES = Number(process.env.MAX_FILE_BYTES || 20 * 1024 * 1024);
 const MAX_TOTAL_UPLOAD_BYTES = Number(process.env.MAX_TOTAL_UPLOAD_BYTES || 30 * 1024 * 1024);
